@@ -2,24 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 import {IconButton} from "../components/IconButton"
 import {
-  FileText,
-  Globe,
-  Video,
-  Captions,
   Plus,
-  X,
-  Upload,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
   BookOpen,
-  Send,
-  ExternalLink,
-  Library,
-  Sparkles,
   Pencil,
   Trash2,
-  RefreshCw,
 } from "lucide-react";
 /* =========================================================================
    NOTEBOOK RAIL
@@ -42,7 +28,7 @@ export function NotebookRail({
           <img src="/icon1.svg"></img>
         </div>
         <div>
-          <div className="nb-rail-title">NotebookLM</div>
+          <div className="nb-rail-title">ChaibookLM</div>
         </div>
       </div>
 

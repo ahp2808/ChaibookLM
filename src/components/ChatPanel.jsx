@@ -1,34 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FileText,
-  Globe,
-  Video,
-  Captions,
-  Plus,
-  X,
-  Upload,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  BookOpen,
   Send,
-  ExternalLink,
-  Library,
   Sparkles,
-  Pencil,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
 
-import { AddSourceModal } from "./AddSourceModal";
 import {renderAnswerWithCitations} from "./Citation"
-import {FullTextHighlight} from "./FullTextHighlight"
-import {IconButton} from "./IconButton"
-import {NotebookRail} from "./NotebookRail"
-import {SourceRow} from "./SourceRow"
-import {SourceViewerDrawer} from "./SourceViewerDrawer"
-import {SourcesPanel} from "./SoursesPanel"
-import {StatusBadge} from "./StatusBadge"
 
 function locationLabel(chunk) {
   if (chunk.page) return `p. ${chunk.page}`;

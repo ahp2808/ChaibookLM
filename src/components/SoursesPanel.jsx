@@ -1,23 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FileText,
-  Globe,
-  Video,
-  Captions,
   Plus,
-  X,
-  Upload,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
   BookOpen,
-  Send,
-  ExternalLink,
-  Library,
-  Sparkles,
-  Pencil,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
 import {SourceRow} from "../components/SourceRow"
 

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
 import {IconButton} from "../components/IconButton"
-import { TYPE_CONFIG, STATUS_LABEL } from "../constants/sourceTypes";
+import { TYPE_CONFIG } from "../constants/sourceTypes";
 import {StatusBadge} from "../components/StatusBadge"
 import {
   Trash2,

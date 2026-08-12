@@ -1,39 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FileText,
-  Globe,
-  Video,
-  Captions,
-  Plus,
-  X,
-  Upload,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  BookOpen,
   Send,
-  ExternalLink,
-  Library,
-  Sparkles,
-  Pencil,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
 
 import "./App.css";
 
 import { OpenAI } from "openai";
-import {getSubtitles} from "youtube-caption-extractor"
 
 import {usePdfJs} from "./hooks/usePdfJs"
 import {uid} from "./utils/ids"
 import {formatTime} from "./utils/format"
 import { embedText, cosineSim } from "./services/embeddings";
-import {chunkCues, chunkPages, chunkPlainText} from "./services/chunking"
-
-import {fetchWebsiteContent} from "./services/parsers/html"
-import {fetchYouTubeTranscript} from "./services/parsers/youtube"
-import {parseVTT} from "./services/parsers/vtt"
 
 import {
   loadNotebooksList,
@@ -44,18 +22,13 @@ import {
 } from "./services/storage";
 import {runIngest} from "./services/injest";
 
-import { TYPE_CONFIG, STATUS_LABEL } from "./constants/sourceTypes";
+import { TYPE_CONFIG } from "./constants/sourceTypes";
 
 import {AddSourceModal} from "./components/AddSourceModal"
 import {ChatPanel} from "./components/ChatPanel"
-import {renderAnswerWithCitations} from "./components/Citation"
-import {FullTextHighlight} from "./components/FullTextHighlight"
-import {IconButton} from "./components/IconButton"
 import {NotebookRail} from "./components/NotebookRail"
-import {SourceRow} from "./components/SourceRow"
 import {SourceViewerDrawer} from "./components/SourceViewerDrawer"
 import {SourcesPanel} from "./components/SoursesPanel"
-import {StatusBadge} from "./components/StatusBadge"
 
 // import { askGroundedQuestion } from "./services/anthropicApi";
 
@@ -265,7 +238,7 @@ export default function App() {
       const system = `You are a careful research assistant answering questions strictly from the user's own notebook sources.
 Rules:
 - For greeting messages like Hi, Hello: give the following output:
-        Hello, Welcome to NotebookLM. Add sources like Textual data, Web links, PDFs, Youtube links and VTT files to the notebook and ask anything related to them.
+        Hello, Welcome to ChaibookLM. Add sources like Textual data, Web links, PDFs, Youtube links and VTT files to the notebook and ask anything related to them.
 - Use ONLY the numbered excerpts provided below. Never use outside knowledge.
 - Every factual sentence must end with the bracket number(s) of the excerpt(s) that support it, e.g. "...grew 12% [1]." or "...as shown in two places [1,3]."
 - If the excerpts don't answer the question, say so plainly instead of guessing.

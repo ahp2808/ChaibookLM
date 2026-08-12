@@ -2,22 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   FileText,
   Globe,
-  Video,
   Captions,
-  Plus,
   X,
   Upload,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  BookOpen,
-  Send,
-  ExternalLink,
-  Library,
-  Sparkles,
-  Pencil,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
 import {IconButton} from "../components/IconButton"
 
@@ -133,7 +120,7 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
           {tab === "url" && (
             <div className="flex flex-col gap-3">
               <p className="field-label-text">
-                NotebookLM tries to read the page directly, then falls back to a
+                ChaibookLM tries to read the page directly, then falls back to a
                 proxy. Some sites still block automated reading — if that
                 happens, paste the article as a Text source instead.
               </p>
@@ -164,7 +151,7 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 className="field-input mono rounded-md px-3 py-2 text-sm outline-none"
               />
               <p className="hint-text">
-                NotebookLM will try to fetch public captions automatically. If a
+                ChaiLM will try to fetch public captions automatically. If a
                 video has none reachable, paste the transcript below (plain
                 text, or WebVTT with timestamps) as a fallback.
               </p>

@@ -1,25 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  FileText,
-  Globe,
-  Video,
-  Captions,
-  Plus,
   X,
-  Upload,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  BookOpen,
-  Send,
   ExternalLink,
-  Library,
-  Sparkles,
-  Pencil,
-  Trash2,
-  RefreshCw,
 } from "lucide-react";
-import { TYPE_CONFIG, STATUS_LABEL } from "../constants/sourceTypes";
+import { TYPE_CONFIG } from "../constants/sourceTypes";
 import { formatTime } from "../utils/format";
 import {FullTextHighlight} from "./FullTextHighlight"
 import { IconButton } from "./IconButton";
