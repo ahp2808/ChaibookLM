@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   FileText,
   Globe,
+  Video,
   Captions,
   X,
   Upload,

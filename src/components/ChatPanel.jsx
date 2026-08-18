@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 import {renderAnswerWithCitations} from "./Citation"
+import { formatTime } from "../utils/format";
 
 function locationLabel(chunk) {
   if (chunk.page) return `p. ${chunk.page}`;

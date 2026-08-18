@@ -1,9 +1,9 @@
-import {chunkCues,chunkPages,chunkPlainText} from "./chunking"
-import { embedText,cosineSim } from "./embeddings";
+import { chunkCues, chunkPages, chunkPlainText } from "./chunking"
+import { embedText, cosineSim } from "./embeddings";
 
-import {fetchWebsiteContent} from "../services/parsers/html"
-import {fetchYouTubeTranscript} from "../services/parsers/youtube"
-import {parseVTT} from "../services/parsers/vtt"
+import { fetchWebsiteContent } from "../services/parsers/html"
+import { fetchYouTubeTranscript, extractYouTubeId } from "../services/parsers/youtube"
+import { parseVTT } from "../services/parsers/vtt"
 
 /* =========================================================================
    INGEST PIPELINE
@@ -105,7 +105,7 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
         e && e.message === "NO_CAPTIONS"
           ? "No captions are available for this video. Remove this source and re-add it, pasting the transcript into the fallback box."
           : (e && e.message) ||
-            "Something went wrong while indexing this source.",
+          "Something went wrong while indexing this source.",
     });
   }
 }
