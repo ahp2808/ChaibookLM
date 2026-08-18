@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Loader2,
-  Send,
-} from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Loader2 } from "lucide-react";
 
 import "./App.css";
 
-import { OpenAI } from "openai";
-
-import {usePdfJs} from "./hooks/usePdfJs"
-import {uid} from "./utils/ids"
-import {formatTime} from "./utils/format"
+import { usePdfJs } from "./hooks/usePdfJs";
+import { uid } from "./utils/ids";
+import { formatTime } from "./utils/format";
 import { embedText, cosineSim } from "./services/embeddings";
 
 import {
@@ -20,27 +15,17 @@ import {
   saveNotebookData,
   deleteNotebookData,
 } from "./services/storage";
-import {runIngest} from "./services/injest";
-
+import { runIngest } from "./services/injest";
 import { TYPE_CONFIG } from "./constants/sourceTypes";
 
-import {AddSourceModal} from "./components/AddSourceModal"
-import {ChatPanel} from "./components/ChatPanel"
-import {NotebookRail} from "./components/NotebookRail"
-import {SourceViewerDrawer} from "./components/SourceViewerDrawer"
-import {SourcesPanel} from "./components/SoursesPanel"
-
-// import { askGroundedQuestion } from "./services/anthropicApi";
+import { AddSourceModal } from "./components/AddSourceModal";
+import { ChatPanel } from "./components/ChatPanel";
+import { NotebookRail } from "./components/NotebookRail";
+import { SourceViewerDrawer } from "./components/SourceViewerDrawer";
+import { SourcesPanel } from "./components/SourcesPanel";
+import { ToastProvider, useToast } from "./components/Toast";
 
 const GEMINI_API_KEY = import.meta.env.VITE_API_KEY;
-
-const EMBED_DIM = 160;
-const STOPWORDS = new Set(
-  "a an the of to in on for and or is are was were be been being this that these those it its as at by with from into over under about than then so if not no do does did can could should would will shall may might i you he she we they them his her our your their what which who whom how when where why".split(
-    " ",
-  ),
-);
-
 
 function locationLabel(chunk) {
   if (chunk.page) return `p. ${chunk.page}`;
@@ -48,9 +33,10 @@ function locationLabel(chunk) {
   return null;
 }
 
-export default function App() {
+function MainApp() {
   const pdfReady = usePdfJs();
   const pdfDocsRef = useRef({});
+  const { showToast } = useToast();
 
   const [loaded, setLoaded] = useState(false);
   const [notebooks, setNotebooks] = useState([]);
@@ -67,7 +53,7 @@ export default function App() {
       let list = await loadNotebooksList();
       if (!list.length) {
         list = [
-          { id: uid("nb"), name: "Untitled notebook", createdAt: Date.now() },
+          { id: uid("nb"), name: "Untitled Notebook", createdAt: Date.now() },
         ];
         await saveNotebooksList(list);
       }
@@ -84,6 +70,7 @@ export default function App() {
       const data = await loadNotebookData(activeId);
       setSources(data.sources || []);
       setMessages(data.messages || []);
+      setCitation(null);
     })();
   }, [activeId]);
 
@@ -132,12 +119,18 @@ export default function App() {
     };
     setSources((prev) => [...prev, base]);
     setShowAddModal(false);
+    showToast(`Added source "${base.name}" — indexing...`, "info");
     setTimeout(() => startIngest(base, input), 50);
   };
 
   const handleRemoveSource = (id) => {
+    const src = sources.find((s) => s.id === id);
     setSources((prev) => prev.filter((s) => s.id !== id));
     delete pdfDocsRef.current[id];
+    if (citation?.source?.id === id) {
+      setCitation(null);
+    }
+    showToast(`Removed "${src?.name || "source"}"`, "info");
   };
 
   const handleReindex = (source) => {
@@ -153,38 +146,51 @@ export default function App() {
       patchSource(source.id, {
         status: "error",
         error:
-          "Re-select the original file to re-index this source (raw file data isn't kept in memory).",
+          "Re-select original file to re-index (raw binary data is not cached).",
       });
+      showToast("Please re-upload file to re-index", "error");
       return;
     }
     patchSource(source.id, { status: "uploading", error: null });
+    showToast(`Re-indexing "${source.name}"...`, "info");
     setTimeout(() => startIngest(source, input), 50);
   };
 
   const createNotebook = async () => {
     const nb = {
       id: uid("nb"),
-      name: "Untitled notebook",
+      name: `Research Notebook ${notebooks.length + 1}`,
       createdAt: Date.now(),
     };
     const list = [...notebooks, nb];
     setNotebooks(list);
     await saveNotebooksList(list);
     setActiveId(nb.id);
+    showToast(`Created new notebook "${nb.name}"`, "success");
   };
 
   const renameNotebook = async (id, name) => {
     const list = notebooks.map((n) => (n.id === id ? { ...n, name } : n));
     setNotebooks(list);
     await saveNotebooksList(list);
+    showToast("Notebook renamed", "success");
   };
 
   const deleteNotebook = async (id) => {
+    const nbToDelete = notebooks.find((n) => n.id === id);
     const list = notebooks.filter((n) => n.id !== id);
     setNotebooks(list);
     await saveNotebooksList(list);
     await deleteNotebookData(id);
-    if (activeId === id && list.length) setActiveId(list[0].id);
+    if (activeId === id && list.length) {
+      setActiveId(list[0].id);
+    }
+    showToast(`Deleted "${nbToDelete?.name || "Notebook"}"`, "info");
+  };
+
+  const handleClearChat = () => {
+    setMessages([]);
+    showToast("Chat cleared", "info");
   };
 
   const handleSend = async (question) => {
@@ -220,7 +226,7 @@ export default function App() {
           {
             id: uid("m"),
             role: "assistant",
-            text: "None of the indexed sources in this notebook seem related to that question, so I can't ground an answer in them. Try rephrasing, or add a source that covers this.",
+            text: "None of the indexed sources in this notebook appear relevant to this question. Please try rephrasing or add a new source covering this topic.",
             error: true,
           },
         ]);
@@ -238,11 +244,11 @@ export default function App() {
       const system = `You are a careful research assistant answering questions strictly from the user's own notebook sources.
 Rules:
 - For greeting messages like Hi, Hello: give the following output:
-        Hello, Welcome to ChaibookLM. Add sources like Textual data, Web links, PDFs, Youtube links and VTT files to the notebook and ask anything related to them.
+        Hello! Welcome to ChaibookLM. Add sources like Textual data, Web links, PDFs, YouTube links, and VTT files to your notebook and ask anything related to them.
 - Use ONLY the numbered excerpts provided below. Never use outside knowledge.
 - Every factual sentence must end with the bracket number(s) of the excerpt(s) that support it, e.g. "...grew 12% [1]." or "...as shown in two places [1,3]."
 - If the excerpts don't answer the question, say so plainly instead of guessing.
-- Be concise and direct.
+- Be concise, direct, and well-structured.
 
 Excerpts:
 ${contextBlock}`;
@@ -276,10 +282,7 @@ ${contextBlock}`;
       }
 
       const data = await res.json();
-      console.log(data);
-      console.log(data.choices[0].message.content);
-      const output = data.choices[0].message.content;
-      const answerText = (output || []);
+      const output = data?.choices?.[0]?.message?.content || "";
 
       setMessages((prev) => [
         ...prev,
@@ -287,7 +290,7 @@ ${contextBlock}`;
           id: uid("m"),
           role: "assistant",
           text:
-            answerText ||
+            output ||
             "I couldn't generate an answer just now — please try again.",
           citedChunks: ranked,
         },
@@ -298,7 +301,7 @@ ${contextBlock}`;
         {
           id: uid("m"),
           role: "assistant",
-          text: `${e}`,
+          text: `${e?.message || e}`,
           error: true,
         },
       ]);
@@ -309,25 +312,29 @@ ${contextBlock}`;
 
   const openCitation = (chunk) => {
     const source = sources.find((s) => s.id === chunk.sourceId);
-    if (source) setCitation({ chunk, source });
+    if (source) {
+      setCitation({ chunk, source });
+    }
   };
 
   const activeNotebook = notebooks.find((n) => n.id === activeId);
 
   if (!loaded) {
     return (
-      <div className="loading-screen flex h-screen w-full items-center justify-center">
-        <Loader2
-          className="animate-spin"
-          style={{ color: "var(--color-gold)" }}
-          size={22}
-        />
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[var(--color-void)] text-white gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-2xl animate-pulse">
+          <img src="/icon1.svg" alt="ChaibookLM" className="h-10 w-10 object-contain" />
+        </div>
+        <div className="flex items-center gap-2 text-sm font-display text-slate-300">
+          <Loader2 size={16} className="animate-spin text-amber-400" />
+          <span>Brewing ChaibookLM workspace…</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="app-root flex h-screen w-full overflow-hidden">
+    <div className="app-root flex h-screen w-full overflow-hidden bg-[var(--color-void)]">
       <NotebookRail
         notebooks={notebooks}
         activeId={activeId}
@@ -336,26 +343,31 @@ ${contextBlock}`;
         onDelete={deleteNotebook}
         onRename={renameNotebook}
       />
+
       <SourcesPanel
         sources={sources}
         onAddClick={() => setShowAddModal(true)}
         onRemove={handleRemoveSource}
         onReindex={handleReindex}
         onOpen={(s) => {
-          if (s.chunks && s.chunks.length)
+          if (s.chunks && s.chunks.length) {
             openCitation({
               ...s.chunks[0],
               sourceId: s.id,
               sourceName: s.name,
             });
+          }
         }}
+        activeCitationSourceId={citation?.source?.id}
       />
+
       <ChatPanel
         notebookName={activeNotebook ? activeNotebook.name : ""}
         sources={sources}
         messages={messages}
         onSend={handleSend}
         onOpenCitation={openCitation}
+        onClearChat={handleClearChat}
         busy={busy}
       />
 
@@ -376,5 +388,13 @@ ${contextBlock}`;
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
   );
 }
