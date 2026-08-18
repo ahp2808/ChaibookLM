@@ -24,7 +24,7 @@ export async function fetchWebsiteContent(url) {
       const html = await attempt();
       const { title, text } = stripHtml(html);
       if (text && text.length > 40) return { title, text };
-    } catch (e) {
+    } catch (_e) {
       /* try next */
     }
   }

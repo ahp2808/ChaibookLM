@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
+
 /* =========================================================================
-   pdf.js loader (not CSS-related — dynamic <script> injection, kept as-is)
+   pdf.js loader
    ========================================================================= */
 
 export function usePdfJs() {
@@ -18,7 +19,9 @@ export function usePdfJs() {
       try {
         window.pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      } catch (e) {}
+      } catch (_e) {
+        // Fallback worker setup
+      }
       setReady(true);
     };
     script.onerror = () => setReady(false);

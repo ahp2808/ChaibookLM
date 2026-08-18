@@ -1,9 +1,9 @@
-import { chunkCues, chunkPages, chunkPlainText } from "./chunking"
-import { embedText, cosineSim } from "./embeddings";
+import { chunkCues, chunkPages, chunkPlainText } from "./chunking";
+import { embedText } from "./embeddings";
 
-import { fetchWebsiteContent } from "../services/parsers/html"
-import { fetchYouTubeTranscript, extractYouTubeId } from "../services/parsers/youtube"
-import { parseVTT } from "../services/parsers/vtt"
+import { fetchWebsiteContent } from "../services/parsers/html";
+import { fetchYouTubeTranscript, extractYouTubeId } from "../services/parsers/youtube";
+import { parseVTT } from "../services/parsers/vtt";
 
 /* =========================================================================
    INGEST PIPELINE
