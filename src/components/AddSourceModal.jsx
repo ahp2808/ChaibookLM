@@ -55,8 +55,35 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
   };
 
   const handlePdfSubmit = () => {
-    if (selectedFile) {
+    if (selectedFile && pdfReady) {
       onAdd({ type: "pdf", name: selectedFile.name, file: selectedFile });
+    }
+  };
+
+  const handleTextSubmit = () => {
+    if (text.trim()) {
+      onAdd({
+        type: "text",
+        name: textName.trim() || "Untitled Text Source",
+        text: text.trim(),
+      });
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (url.trim()) {
+      onAdd({ type: "url", name: url.trim(), url: url.trim() });
+    }
+  };
+
+  const handleYoutubeSubmit = () => {
+    if (ytUrl.trim()) {
+      onAdd({
+        type: "youtube",
+        name: ytUrl.trim(),
+        url: ytUrl.trim(),
+        pastedTranscript: ytTranscript,
+      });
     }
   };
 
@@ -163,21 +190,28 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!selectedFile || !pdfReady}
-                  onClick={handlePdfSubmit}
-                  className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold"
-                >
-                  Index PDF
-                </button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                    Select a PDF file and click Index
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!selectedFile || !pdfReady}
+                    onClick={handlePdfSubmit}
+                    className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Index PDF
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -191,6 +225,12 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 <input
                   value={textName}
                   onChange={(e) => setTextName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleTextSubmit();
+                    }
+                  }}
                   placeholder="e.g. Meeting Notes / Research Outline"
                   className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-hairline-2)] px-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500/60"
                 />
@@ -208,33 +248,40 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleTextSubmit();
+                    }
+                  }}
                   placeholder="Paste or write plain text, markdown, or excerpts..."
                   rows={7}
                   className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-hairline-2)] px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500/60 resize-none leading-relaxed"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!text.trim()}
-                  onClick={() =>
-                    onAdd({
-                      type: "text",
-                      name: textName.trim() || "Untitled Text Source",
-                      text: text.trim(),
-                    })
-                  }
-                  className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold"
-                >
-                  Index Text
-                </button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                    Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-sans">Enter ↵</kbd> to add · <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-sans">Shift+Enter</kbd> for newline
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!text.trim()}
+                    onClick={handleTextSubmit}
+                    className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Index Text
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -254,29 +301,40 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                   <input
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleUrlSubmit();
+                      }
+                    }}
                     placeholder="https://en.wikipedia.org/wiki/..."
                     className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-hairline-2)] pl-9 pr-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-amber-500/60"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!url.trim()}
-                  onClick={() =>
-                    onAdd({ type: "url", name: url.trim(), url: url.trim() })
-                  }
-                  className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold"
-                >
-                  Fetch & Index
-                </button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                    Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-sans">Enter ↵</kbd> to add
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!url.trim()}
+                    onClick={handleUrlSubmit}
+                    className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Fetch & Index
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -294,6 +352,12 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 <input
                   value={ytUrl}
                   onChange={(e) => setYtUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleYoutubeSubmit();
+                    }
+                  }}
                   placeholder="https://www.youtube.com/watch?v=..."
                   className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-hairline-2)] px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-amber-500/60"
                 />
@@ -306,34 +370,40 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 <textarea
                   value={ytTranscript}
                   onChange={(e) => setYtTranscript(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleYoutubeSubmit();
+                    }
+                  }}
                   placeholder="Paste manual captions or WebVTT cues if video has disabled auto-subtitles..."
                   rows={4}
                   className="w-full rounded-xl bg-[var(--color-surface)] border border-[var(--color-hairline-2)] px-3.5 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500/60 resize-none leading-relaxed"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!ytUrl.trim()}
-                  onClick={() =>
-                    onAdd({
-                      type: "youtube",
-                      name: ytUrl.trim(),
-                      url: ytUrl.trim(),
-                      pastedTranscript: ytTranscript,
-                    })
-                  }
-                  className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold"
-                >
-                  Index Video
-                </button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                    Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-sans">Enter ↵</kbd> to add · <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 font-sans">Shift+Enter</kbd> for newline
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!ytUrl.trim()}
+                    onClick={handleYoutubeSubmit}
+                    className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Index Video
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -388,21 +458,28 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={!selectedFile}
-                  onClick={handleVttSubmit}
-                  className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold"
-                >
-                  Index Transcript
-                </button>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                    Select a .vtt/.srt file and click Index
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!selectedFile}
+                    onClick={handleVttSubmit}
+                    className="send-btn-primary px-5 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Index Transcript
+                  </button>
+                </div>
               </div>
             </div>
           )}
