@@ -13,6 +13,9 @@
   "dependencies": {
     "@google/genai": "^2.13.0",
     "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.2.8",
+    "@langchain/google-genai": "^2.2.0",
+    "@langchain/openai": "^1.5.8",
     "@mistralai/mistralai": "^2.5.0",
     "@tailwindcss/vite": "^4.3.3",
     "dotenv": "^17.4.2",

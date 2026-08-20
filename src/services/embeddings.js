@@ -1,35 +1,83 @@
-const EMBED_DIM = 160;
-const STOPWORDS = new Set(
-  "a an the of to in on for and or is are was were be been being this that these those it its as at by with from into over under about than then so if not no do does did can could should would will shall may might i you he she we they them his her our your their what which who whom how when where why".split(
-    " ",
-  ),
-);
+import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import { OpenAIEmbeddings } from "@langchain/openai";
 
-export function embedText(text) {
-  const vec = new Float32Array(EMBED_DIM);
-  const words = (text.toLowerCase().match(/[a-z0-9]+/g) || []).filter(
-    (w) => w.length > 1 && !STOPWORDS.has(w),
-  );
-  for (const w of words) {
-    let h = 2166136261;
-    for (let i = 0; i < w.length; i++) {
-      h ^= w.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    vec[Math.abs(h) % EMBED_DIM] += 1;
+// Default API Key from environment
+const GEMINI_API_KEY =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_KEY) ||
+  (typeof globalThis !== "undefined" && globalThis.process?.env?.VITE_API_KEY) ||
+  "";
+
+/**
+ * Creates an instance of GoogleGenerativeAIEmbeddings or OpenAIEmbeddings
+ */
+export function getEmbeddingModel(options = {}) {
+  const provider = options.provider || "google";
+  const apiKey = options.apiKey || GEMINI_API_KEY;
+
+  if (provider === "openai") {
+    return new OpenAIEmbeddings({
+      model: options.model || "text-embedding-3-small",
+      openAIApiKey: apiKey,
+    });
   }
-  let norm = 0;
-  for (let i = 0; i < EMBED_DIM; i++) {
-    vec[i] = Math.log(1 + vec[i]);
-    norm += vec[i] * vec[i];
-  }
-  norm = Math.sqrt(norm) || 1;
-  for (let i = 0; i < EMBED_DIM; i++) vec[i] /= norm;
-  return Array.from(vec);
+
+  return new GoogleGenerativeAIEmbeddings({
+    model: options.model || "gemini-embedding-001", // can also use gemini-embedding-002
+    apiKey: apiKey,
+  });
 }
 
+/**
+ * Convert user query / single text into vector embeddings
+ * @param {string} userQuery
+ * @param {object} [options]
+ * @returns {Promise<number[]>}
+ */
+export async function query(userQuery, options = {}) {
+  const embeddings = getEmbeddingModel(options);
+  return await embeddings.embedQuery(userQuery);
+}
+
+/**
+ * Alias for query (embeds single text)
+ * @param {string} text
+ * @param {object} [options]
+ * @returns {Promise<number[]>}
+ */
+export async function embedText(text, options = {}) {
+  return await query(text, options);
+}
+
+/**
+ * Convert multiple document chunks into vector embeddings
+ * @param {string[]} texts
+ * @param {object} [options]
+ * @returns {Promise<number[][]>}
+ */
+export async function embedDocuments(texts, options = {}) {
+  if (!Array.isArray(texts) || texts.length === 0) return [];
+  const embeddings = getEmbeddingModel(options);
+  return await embeddings.embedDocuments(texts);
+}
+
+/**
+ * Computes cosine similarity between two embedding vectors
+ * @param {number[]} a
+ * @param {number[]} b
+ * @returns {number}
+ */
 export function cosineSim(a, b) {
-  let s = 0;
-  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
-  return s;
+  if (!a || !b || a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+  return denominator === 0 ? 0 : dot / denominator;
 }
+
+export { GoogleGenerativeAIEmbeddings, OpenAIEmbeddings };

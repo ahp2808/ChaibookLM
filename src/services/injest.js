@@ -1,5 +1,5 @@
 import { chunkCues, chunkPages, chunkPlainText } from "./chunking";
-import { embedText } from "./embeddings";
+import { embedDocuments } from "./embeddings";
 
 import { fetchWebsiteContent } from "../services/parsers/html";
 import { fetchYouTubeTranscript, extractYouTubeId } from "../services/parsers/youtube";
@@ -89,10 +89,14 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
     }
 
     patch({ status: "embedding" });
-    await new Promise((r) => setTimeout(r, 200));
-    chunks = chunks
-      .filter((c) => c.text && c.text.trim().length > 2)
-      .map((c) => ({ ...c, vector: embedText(c.text) }));
+    const validChunks = chunks.filter((c) => c.text && c.text.trim().length > 2);
+    if (validChunks.length > 0) {
+      const texts = validChunks.map((c) => c.text);
+      const vectors = await embedDocuments(texts);
+      chunks = validChunks.map((c, i) => ({ ...c, vector: vectors[i] }));
+    } else {
+      chunks = [];
+    }
 
     if (!chunks.length)
       throw new Error("No readable text was found in this source.");

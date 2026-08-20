@@ -213,7 +213,7 @@ function MainApp() {
           );
         });
 
-      const qVec = embedText(question);
+      const qVec = await embedText(question);
       const ranked = pool
         .map((c) => ({ ...c, score: cosineSim(qVec, c.vector) }))
         .sort((a, b) => b.score - a.score)
