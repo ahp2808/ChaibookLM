@@ -51,10 +51,10 @@ export function renderAnswerWithCitations(answer, citedChunks = [], onOpenCitati
                     key={`cite-${n}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onOpenCitation(chunk);
+                      onOpenCitation?.(chunk);
                     }}
                     className="citation-badge"
-                    title={`Source [${n}]: ${chunk.sourceName}${chunk.page ? ` (Page ${chunk.page})` : ""}`}
+                    title={`Source [${n}]: ${chunk.sourceName || "Source"}${chunk.page ? ` (Page ${chunk.page})` : ""}`}
                   >
                     {n}
                   </button>

@@ -1,18 +1,43 @@
 import { chunkCues, chunkPages, chunkPlainText } from "./chunking";
 import { embedDocuments } from "./embeddings";
 
-import { fetchWebsiteContent } from "../services/parsers/html";
-import { fetchYouTubeTranscript, extractYouTubeId } from "../services/parsers/youtube";
-import { parseVTT } from "../services/parsers/vtt";
+import { fetchWebsiteContent } from "./parsers/html";
+import { fetchYouTubeTranscript, extractYouTubeId } from "./parsers/youtube";
+import { parseVTT } from "./parsers/vtt";
+import { APP_CONFIG } from "../constants/config";
 
-/* =========================================================================
-   INGEST PIPELINE
-   ========================================================================= */
+/**
+ * Executes the ingestion pipeline for a given source with a strict timeout:
+ * 1. Extraction (PDF, Text, Web scraping, YouTube captions, VTT parsing)
+ * 2. Semantic Chunking
+ * 3. Embedding vector generation
+ * 4. Status updates via patch callback
+ *
+ * Times out if the process takes longer than APP_CONFIG.INGESTION_TIMEOUT_MS (1 minute).
+ *
+ * @param {object} params
+ * @param {object} params.source - Source base object
+ * @param {object} params.input - Input payload (file, text, or url)
+ * @param {Function} params.patch - State update patch function
+ * @param {React.MutableRefObject} params.pdfDocsRef - Reference map for loaded PDF document instances
+ */
 export async function runIngest({ source, input, patch, pdfDocsRef }) {
-  try {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(
+        new Error(
+          "Source reading/indexing timed out (exceeded 1 minute limit). Please check your network or try pasting the content directly as Text.",
+        ),
+      );
+    }, APP_CONFIG.INGESTION_TIMEOUT_MS);
+  });
+
+  const ingestProcess = async () => {
     patch({ status: "extracting", error: null });
     let chunks = [];
-    let meta = { ...(source.meta || {}) };
+    const meta = { ...(source.meta || {}) };
 
     if (source.type === "pdf") {
       const buf = await input.file.arrayBuffer();
@@ -27,7 +52,7 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
       meta.numPages = pdf.numPages;
       patch({ status: "chunking" });
       chunks = chunkPages(pages).map((c, i) => ({
-        id: source.id + "-c" + i,
+        id: `${source.id}-c${i}`,
         text: c.text,
         page: c.page,
       }));
@@ -35,7 +60,7 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
       meta.fullText = input.text;
       patch({ status: "chunking" });
       chunks = chunkPlainText(input.text).map((c, i) => ({
-        id: source.id + "-c" + i,
+        id: `${source.id}-c${i}`,
         text: c.text,
         charStart: c.start,
         charEnd: c.end,
@@ -47,7 +72,7 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
       meta.fullText = text;
       patch({ status: "chunking", name: title || source.name });
       chunks = chunkPlainText(text).map((c, i) => ({
-        id: source.id + "-c" + i,
+        id: `${source.id}-c${i}`,
         text: c.text,
         charStart: c.start,
         charEnd: c.end,
@@ -68,7 +93,7 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
       meta.fullTranscript = cues;
       patch({ status: "chunking" });
       chunks = chunkCues(cues).map((c, i) => ({
-        id: source.id + "-c" + i,
+        id: `${source.id}-c${i}`,
         text: c.text,
         startTime: c.startTime,
         endTime: c.endTime,
@@ -76,12 +101,13 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
     } else if (source.type === "vtt") {
       const raw = await input.file.text();
       const cues = parseVTT(raw);
-      if (!cues.length)
+      if (!cues.length) {
         throw new Error("Couldn't find any WebVTT cues in that file.");
+      }
       meta.fullTranscript = cues;
       patch({ status: "chunking" });
       chunks = chunkCues(cues).map((c, i) => ({
-        id: source.id + "-c" + i,
+        id: `${source.id}-c${i}`,
         text: c.text,
         startTime: c.startTime,
         endTime: c.endTime,
@@ -98,10 +124,15 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
       chunks = [];
     }
 
-    if (!chunks.length)
+    if (!chunks.length) {
       throw new Error("No readable text was found in this source.");
+    }
 
     patch({ status: "ready", chunks, meta, error: null });
+  };
+
+  try {
+    await Promise.race([ingestProcess(), timeoutPromise]);
   } catch (e) {
     patch({
       status: "error",
@@ -109,7 +140,9 @@ export async function runIngest({ source, input, patch, pdfDocsRef }) {
         e && e.message === "NO_CAPTIONS"
           ? "No captions are available for this video. Remove this source and re-add it, pasting the transcript into the fallback box."
           : (e && e.message) ||
-          "Something went wrong while indexing this source.",
+            "Something went wrong while indexing this source.",
     });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

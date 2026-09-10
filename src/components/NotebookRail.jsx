@@ -125,10 +125,14 @@ export function NotebookRail({
               />
 
               {isEditing ? (
-                <div className="flex flex-1 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="flex flex-1 items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <input
                     autoFocus
                     value={editVal}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setEditVal(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") saveRename(nb.id);
@@ -137,12 +141,14 @@ export function NotebookRail({
                     onBlur={() => saveRename(nb.id)}
                     className="w-full bg-[var(--color-raised-2)] rounded px-1.5 py-0.5 text-xs text-white outline-none border border-amber-500/50"
                   />
-                  <IconButton title="Save" size="sm" onClick={() => saveRename(nb.id)}>
-                    <Check size={12} className="text-emerald-400" />
-                  </IconButton>
-                  <IconButton title="Cancel" size="sm" onClick={cancelRename}>
-                    <X size={12} className="text-slate-400" />
-                  </IconButton>
+                  <div onMouseDown={(e) => e.preventDefault()} className="flex items-center gap-0.5">
+                    <IconButton title="Save" size="sm" onClick={() => saveRename(nb.id)}>
+                      <Check size={12} className="text-emerald-400" />
+                    </IconButton>
+                    <IconButton title="Cancel" size="sm" onClick={cancelRename}>
+                      <X size={12} className="text-slate-400" />
+                    </IconButton>
+                  </div>
                 </div>
               ) : (
                 <span

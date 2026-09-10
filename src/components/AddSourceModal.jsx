@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FileText,
   Globe,
@@ -24,6 +24,17 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
   const fileRef = useRef(null);
   const vttRef = useRef(null);
 
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   const tabs = [
     { id: "pdf", label: "PDF", icon: FileText, color: "text-rose-400" },
     { id: "text", label: "Text", icon: FileText, color: "text-amber-400" },
@@ -41,15 +52,26 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      if (tab === "pdf" && file.type === "application/pdf") {
+      if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+        setTab("pdf");
         setSelectedFile(file);
-      } else if (tab === "vtt" && (file.name.endsWith(".vtt") || file.name.endsWith(".srt"))) {
+      } else if (file.name.endsWith(".vtt") || file.name.endsWith(".srt")) {
+        setTab("vtt");
         setSelectedFile(file);
+      } else if (file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+        try {
+          const content = await file.text();
+          setTab("text");
+          setTextName(file.name.replace(/\.[^/.]+$/, ""));
+          setText(content);
+        } catch (_err) {
+          // ignore
+        }
       }
     }
   };
@@ -151,6 +173,9 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 type="file"
                 accept="application/pdf"
                 className="hidden"
+                onClick={(e) => {
+                  e.target.value = null;
+                }}
                 onChange={(e) => {
                   const f = e.target.files[0];
                   if (f) setSelectedFile(f);
@@ -419,6 +444,9 @@ export function AddSourceModal({ onClose, onAdd, pdfReady }) {
                 type="file"
                 accept=".vtt,text/vtt,.srt"
                 className="hidden"
+                onClick={(e) => {
+                  e.target.value = null;
+                }}
                 onChange={(e) => {
                   const f = e.target.files[0];
                   if (f) setSelectedFile(f);
